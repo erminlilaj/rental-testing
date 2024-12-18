@@ -47,9 +47,9 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public boolean deleteUser(Long id) {
-        SecurityBean currentUser = SecurityContext.get();
+//        SecurityBean currentUser = SecurityContext.get();
 
-        if (!authenticationService.isAdmin(currentUser)) {
+        if (!authenticationService.isAdmin()) {
             throw new AccessDeniedException("Only admins can delete users");
         }
         if (userRepository.existsById(id)) {

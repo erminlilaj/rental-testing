@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-
+    // Handle our custom ServiceException and its subclasses
     @ExceptionHandler(ServiceException.class)
     public ResponseEntity<ErrorResponse> handleRentalApiException(
             ServiceException ex,
@@ -34,12 +34,13 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(errorResponse, httpStatus);
     }
 
-
+    // Handle validation errors
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidationException(
             MethodArgumentNotValidException ex,
             WebRequest request) {
 
+        // Collect all validation errors into a single message
         String validationErrors = ex.getBindingResult()
                 .getFieldErrors()
                 .stream()

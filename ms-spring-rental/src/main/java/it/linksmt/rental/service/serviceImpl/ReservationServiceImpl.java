@@ -17,10 +17,7 @@ import it.linksmt.rental.service.AuthenticationService;
 import it.linksmt.rental.service.ReservationService;
 import org.springframework.stereotype.Service;
 
-import java.time.Duration;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.YearMonth;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -35,8 +32,8 @@ public class ReservationServiceImpl implements ReservationService {
     private VehicleRepository vehicleRepository;
     private UserRepository userRepository;
 
-    public ReservationServiceImpl(ReservationRepository reservationRepository, AuthenticationService authenticationService
-            , VehicleRepository vehicleRepository, UserRepository userRepository, VehicleServiceImpl vehicleServiceImpl, UserServiceImpl userServiceImpl) {
+    public ReservationServiceImpl(ReservationRepository reservationRepository, AuthenticationService authenticationService,
+                                  VehicleRepository vehicleRepository, UserRepository userRepository, VehicleServiceImpl vehicleServiceImpl, UserServiceImpl userServiceImpl) {
         this.reservationRepository = reservationRepository;
         this.authenticationService = authenticationService;
         this.vehicleRepository=vehicleRepository;
@@ -47,28 +44,41 @@ public class ReservationServiceImpl implements ReservationService {
 
     @Override
     public ReservationResponse createReservation(CreateReservationRequest reservationRequest) {
-        Long currentUserId=authenticationService.getCurrentUserId();
-        VehicleEntity requestedVehicle=vehicleServiceImpl.findVehicleById(reservationRequest.getVehicleId());
+        Long currentUserId = authenticationService.getCurrentUserId();
+        VehicleEntity requestedVehicle = vehicleServiceImpl.getVehicleById(reservationRequest.getVehicleId());
 
-        boolean isVehicleBusy = reservationRepository.areDatesOverlapping(
-                reservationRequest.getVehicleId(),
-                reservationRequest.getStartDate(),
-                reservationRequest.getEndDate());
-
-        if (requestedVehicle.getVehicleStatus().equals(VehicleStatus.MAINTENANCE)|| isVehicleBusy) {
-            throw new ServiceException(
-                    ErrorCode.VEHICLE_NOT_AVAILABLE,
-                    "vehicle isnt available"
-            );
+        if (!checkAvailability(reservationRequest)) {
+            throw new ServiceException(ErrorCode.VEHICLE_NOT_AVAILABLE, "Vehicle is not available for the selected dates");
         }
-        System.out.println("reservation creeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeated"+ isVehicleBusy);
 
-        ReservationEntity savedReservation = saveReservationDetails(reservationRequest,requestedVehicle,currentUserId);
-
+        ReservationEntity savedReservation = saveReservationDetails(reservationRequest, requestedVehicle, currentUserId);
         return convertReservationToResponse(savedReservation);
     }
+    @Override
+    public boolean checkAvailability(CreateReservationRequest reservationRequest) {
+        VehicleEntity requestedVehicle = vehicleServiceImpl.getVehicleById(reservationRequest.getVehicleId());
 
+        // Detailed logging
+        System.out.println("Requested Vehicle ID: " + requestedVehicle.getId());
+        System.out.println("Vehicle Status: " + requestedVehicle.getVehicleStatus());
 
+        boolean isVehicleBusy = reservationRepository.areDatesOverlapping(
+                requestedVehicle.getId(),
+                reservationRequest.getStartDate(),
+                reservationRequest.getEndDate()
+        );
+
+        System.out.println("Is Vehicle Busy (Overlapping): " + isVehicleBusy);
+
+        boolean isAvailable = !requestedVehicle.getVehicleStatus().equals(VehicleStatus.MAINTENANCE) && !isVehicleBusy;
+
+        System.out.println("Detailed Availability Check:");
+        System.out.println("Vehicle Status Check: " + !requestedVehicle.getVehicleStatus().equals(VehicleStatus.MAINTENANCE));
+        System.out.println("Vehicle Busy Check: " + !isVehicleBusy);
+        System.out.println("Final Availability: " + isAvailable);
+
+        return isAvailable;
+    }
 
 
     public ReservationResponse convertReservationToResponse(ReservationEntity savedReservation) {
@@ -119,20 +129,20 @@ public class ReservationServiceImpl implements ReservationService {
 
     @Override
     public List<ReservationResponse> findAllReservations() {
-       List<ReservationEntity> reservationsList=reservationRepository.findAll();
-       if(reservationsList==null){
-           throw new ServiceException(
-                   ErrorCode.RESERVATION_NOT_FOUND,
-                   "There is no reservations"
-           );
-       }
+        List<ReservationEntity> reservationsList=reservationRepository.findAll();
+        if(reservationsList==null){
+            throw new ServiceException(
+                    ErrorCode.RESERVATION_NOT_FOUND,
+                    "There is no reservations"
+            );
+        }
         return convertReservationListToResponse(reservationsList);
     }
-public List<ReservationResponse> convertReservationListToResponse(List<ReservationEntity> reservationList) {
-return reservationList.stream()
-        .map(reservationEntity -> convertReservationToResponse(reservationEntity))
-        .collect(Collectors.toUnmodifiableList());
-}
+    public List<ReservationResponse> convertReservationListToResponse(List<ReservationEntity> reservationList) {
+        return reservationList.stream()
+                .map(reservationEntity -> convertReservationToResponse(reservationEntity))
+                .collect(Collectors.toUnmodifiableList());
+    }
 
 
     @Override
@@ -162,6 +172,30 @@ return reservationList.stream()
         ReservationEntity savedReservation = reservationRepository.save(reservationEntity);
 
         return convertReservationToResponse(savedReservation);
+    }
+
+    @Override
+    public List<ReservationResponse> cancelReservationsOfVehicle(Long vehicleId) {
+
+        List<ReservationEntity> vehiclesReservations = reservationRepository.listOfActiveOrFutureReservations(vehicleId, LocalDateTime.now());
+
+
+        List<ReservationResponse> cancelledReservations = new ArrayList<>();
+        for (ReservationEntity reservation : vehiclesReservations) {
+            reservation.setStatus(ReservationStatus.CANCELLED);
+            ReservationEntity savedReservation = reservationRepository.save(reservation);
+            cancelledReservations.add(convertReservationToResponse(savedReservation));
+        }
+
+        return cancelledReservations;
+    }
+    @Override
+    public List<ReservationResponse> listOfActiveOrFutureReservations(Long vehicleId) {
+        LocalDateTime currentTime = LocalDateTime.now();
+        List<ReservationEntity> vehiclesReservations = reservationRepository.listOfActiveOrFutureReservations(vehicleId, currentTime);
+        List<ReservationResponse> reservationResponseList = convertReservationListToResponse(vehiclesReservations);
+
+        return reservationResponseList;
     }
 
 
@@ -228,6 +262,17 @@ return reservationList.stream()
                 .build();
 
         return List.of(completedResponse, ongoingResponse, cancelledResponse);
+    }
+
+    @Override
+    public List<ReservationResponse> getReservationListOfUser() {
+        Long userId=authenticationService.getCurrentUserId();
+        List<ReservationEntity> reservationEntityList=reservationRepository.findUsersReservations(userId);
+        List<ReservationResponse> reservationResponseList=convertReservationListToResponse(reservationEntityList);
+        if(reservationResponseList.isEmpty()) {
+            return List.of();
+        }
+        return reservationResponseList;
     }
 
 

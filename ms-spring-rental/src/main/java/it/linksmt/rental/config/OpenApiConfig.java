@@ -12,11 +12,11 @@ import io.swagger.v3.oas.annotations.servers.Server;
 
 @OpenAPIDefinition(
         info = @Info(
-//                contact = @Contact(
-//                        name= "Eri",
-//                        email = "ermin.lilaj@linksmt.it"
-//
-//                ),
+                contact = @Contact(
+                        name= "Eri",
+                        email = "ermin.lilaj@linksmt.it"
+
+                ),
                 description = "OpenApi documentation for ms-spring-rental",
                 title ="OpenApi specification  ",
                 version = "1.0"
@@ -25,7 +25,7 @@ import io.swagger.v3.oas.annotations.servers.Server;
         servers = {
                 @Server(
                         description = "Local ENV",
-                        url = "http://localhost:8080/"
+                        url = "http://localhost:8080"
                 )
         },
         security = {

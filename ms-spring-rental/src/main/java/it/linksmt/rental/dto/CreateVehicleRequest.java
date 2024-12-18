@@ -6,6 +6,8 @@ import it.linksmt.rental.enums.VehicleStatus;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.web.multipart.MultipartFile;
+
 
 @Data
 @AllArgsConstructor
@@ -19,5 +21,6 @@ private FuelType fuelType;
 private String color;
 private VehicleStatus vehicleStatus;
 private double dailyFee;
+
 
 }

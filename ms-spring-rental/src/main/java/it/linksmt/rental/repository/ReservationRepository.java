@@ -1,6 +1,7 @@
 package it.linksmt.rental.repository;
 
 import it.linksmt.rental.entity.ReservationEntity;
+import it.linksmt.rental.entity.UserEntity;
 import it.linksmt.rental.entity.VehicleEntity;
 import it.linksmt.rental.repository.projections.ReservationStatisticsProjection;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -8,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 public interface ReservationRepository extends JpaRepository<ReservationEntity,Long> {
     @Query("SELECT CASE WHEN COUNT(r) > 0 THEN true ELSE false END FROM ReservationEntity r " +
@@ -44,4 +46,13 @@ public interface ReservationRepository extends JpaRepository<ReservationEntity,L
             "AND r.status = 'CANCELLED'")
     ReservationStatisticsProjection cancelledReservationsWithStats(LocalDateTime startOfMonth, LocalDateTime endOfMonth);
 
+    @Query("SELECT r FROM ReservationEntity r WHERE r.user.id = :userId")
+    List<ReservationEntity> findUsersReservations(Long userId);
+
+    @Query("SELECT r FROM ReservationEntity r " +
+            "WHERE r.vehicle.id = :vehicleId " +
+            "AND r.status = 'RESERVED' " +
+            "AND (r.startDate <= :currentTime AND r.endDate >= :currentTime " +
+            "OR r.startDate > :currentTime)")
+    List<ReservationEntity> listOfActiveOrFutureReservations(Long vehicleId, LocalDateTime currentTime);
 }

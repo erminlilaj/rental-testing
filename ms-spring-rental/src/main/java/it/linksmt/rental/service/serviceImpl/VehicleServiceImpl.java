@@ -1,37 +1,47 @@
 package it.linksmt.rental.service.serviceImpl;
 
 import it.linksmt.rental.dto.CreateVehicleRequest;
+import it.linksmt.rental.dto.ReservationResponse;
 import it.linksmt.rental.dto.UpdateVehicleRequest;
+import it.linksmt.rental.dto.VehicleResponse;
 import it.linksmt.rental.entity.VehicleEntity;
 import it.linksmt.rental.enums.ErrorCode;
 
 import it.linksmt.rental.exception.ServiceException;
 import it.linksmt.rental.repository.VehicleRepository;
-import it.linksmt.rental.security.SecurityBean;
-import it.linksmt.rental.security.SecurityContext;
 import it.linksmt.rental.service.AuthenticationService;
+import it.linksmt.rental.service.FileStorageService;
+import it.linksmt.rental.service.VehicleBusinessLayer;
 import it.linksmt.rental.service.VehicleService;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class VehicleServiceImpl implements VehicleService {
 
     VehicleRepository vehicleRepository;
     public AuthenticationService authenticationService;
+    public FileStorageService fileStorageService;
 
-    public VehicleServiceImpl(VehicleRepository vehicleRepository, AuthenticationService authenticationService) {
+
+    public VehicleServiceImpl(VehicleRepository vehicleRepository, AuthenticationService authenticationService, FileStorageService fileStorageService) {
         this.vehicleRepository = vehicleRepository;
         this.authenticationService = authenticationService;
+        this.fileStorageService = fileStorageService;
+        //this.vehicleBusinessLayer = vehicleBusinessLayer;
+
     }
 
     @Override
-    public VehicleEntity createVehicle(CreateVehicleRequest createVehicleRequest) {
-        SecurityBean currentUser = SecurityContext.get();
+    public VehicleEntity createVehicle(CreateVehicleRequest createVehicleRequest, MultipartFile image) {
+        //SecurityBean currentUser = SecurityContext.get();
 
-        if (!authenticationService.isAdmin(currentUser)) {
+        if (!authenticationService.isAdmin()) {
             //throw new AccessDeniedException(
             throw new ServiceException(
                     ErrorCode.UNAUTHORIZED_ACCESS,
@@ -48,6 +58,11 @@ public class VehicleServiceImpl implements VehicleService {
             vehicleEntity.setColor(createVehicleRequest.getColor());
             vehicleEntity.setVehicleStatus(createVehicleRequest.getVehicleStatus());
             vehicleEntity.setDailyFee(createVehicleRequest.getDailyFee());
+            //
+            if(image!=null && !image.isEmpty()) {
+                String imagePath = fileStorageService.storeFile(image);
+                vehicleEntity.setImagePath(imagePath);
+            }
             return vehicleRepository.save(vehicleEntity);
         }
         catch (Exception e) {
@@ -67,7 +82,8 @@ public class VehicleServiceImpl implements VehicleService {
             );
         }
         try {
-            return vehicleRepository.findAll();
+
+            return vehicleRepository.findCurrentVehicles();
         }catch (Exception e) {
             throw new ServiceException(
                     ErrorCode.INTERNAL_SERVER_ERROR,
@@ -77,20 +93,38 @@ public class VehicleServiceImpl implements VehicleService {
     }
 
     @Override
-    public VehicleEntity findVehicleById(Long id) {
+    public VehicleResponse findVehicleById(Long id) {
 
 
-            return vehicleRepository.findById(id).orElseThrow(()->new ServiceException(
+            VehicleEntity vehicleEntity= vehicleRepository.findById(id).orElseThrow(()->new ServiceException(
                     ErrorCode.VEHICLE_NOT_FOUND
             ));
-
+return convertVehicleToResponse(vehicleEntity);
+    }
+public VehicleEntity getVehicleById(Long id) {
+        return vehicleRepository.findById(id).orElseThrow(()->new ServiceException(
+                ErrorCode.VEHICLE_NOT_FOUND
+        ));
+}
+    private VehicleResponse convertVehicleToResponse(VehicleEntity vehicleEntity) {
+        VehicleResponse vehicleResponse = new VehicleResponse();
+        vehicleResponse.setId(vehicleEntity.getId());
+        vehicleResponse.setBrand(vehicleEntity.getBrand());
+        vehicleResponse.setModel(vehicleEntity.getModel());
+        vehicleResponse.setYear(vehicleEntity.getYear());
+        vehicleResponse.setGearboxType(vehicleEntity.getGearboxType());
+        vehicleResponse.setFuelType(vehicleEntity.getFuelType());
+        vehicleResponse.setColor(vehicleEntity.getColor());
+        vehicleResponse.setVehicleStatus(vehicleEntity.getVehicleStatus());
+        vehicleResponse.setDailyFee(vehicleEntity.getDailyFee());
+        return vehicleResponse;
     }
 
     @Override
     public boolean deleteVehicle(Long id) {
-        SecurityBean currentUser = SecurityContext.get();
+       // SecurityBean currentUser = SecurityContext.get();
 
-        if (!authenticationService.isAdmin(currentUser)) {
+        if (!authenticationService.isAdmin()) {
             throw new ServiceException(
                     ErrorCode.UNAUTHORIZED_ACCESS,
                     "You do not have access to delete a vehicle"
@@ -103,7 +137,14 @@ public class VehicleServiceImpl implements VehicleService {
            );
        }
        try{
-           vehicleRepository.deleteById(id);
+           //perform soft delete
+        VehicleEntity deletedVehicle=vehicleRepository.findById(id).orElse(null);
+        deletedVehicle.setDeletedAt(LocalDateTime.now());
+//if(vehicleBusinessLayer.activateOrFutureReservationOfVehicle(id)!=null){
+//    vehicleBusinessLayer.deleteVehicle(id);
+//}
+
+        vehicleRepository.save(deletedVehicle);
           return true;
        }catch (Exception e) {
            throw new ServiceException(
@@ -116,10 +157,10 @@ public class VehicleServiceImpl implements VehicleService {
 
     @Override
     public VehicleEntity updateVehicle(Long id, UpdateVehicleRequest updateVehicleRequest) {
-        SecurityBean currentUser = SecurityContext.get();
+        //SecurityBean currentUser = SecurityContext.get();
 
 
-        if (!authenticationService.isAdmin(currentUser)) {
+        if (!authenticationService.isAdmin()) {
             throw new ServiceException(
                     ErrorCode.UNAUTHORIZED_ACCESS,
                     "You do not have access to update a vehicle."
@@ -140,8 +181,16 @@ public class VehicleServiceImpl implements VehicleService {
 
     @Override
     public double getVehiclePrice(Long id) {
-        VehicleEntity vehicle = findVehicleById(id);
+        VehicleEntity vehicle = getVehicleById(id);
         return vehicle.getDailyFee();
+    }
+
+    @Override
+    public Resource getVehicleImage(String imagePath) throws IOException {
+       if(imagePath==null || imagePath.isEmpty()) {
+           return null;
+       }
+       return fileStorageService.getImage(imagePath);
     }
 
 }

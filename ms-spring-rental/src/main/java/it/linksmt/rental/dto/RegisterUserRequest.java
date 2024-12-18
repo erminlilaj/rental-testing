@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class CreateUserRequest {
+public class RegisterUserRequest {
     private String username;
     private String name;
     private String surname;
@@ -17,5 +17,4 @@ public class CreateUserRequest {
     private String password;
     private int age;
 
-    private UserType userType = UserType.USER;
 }

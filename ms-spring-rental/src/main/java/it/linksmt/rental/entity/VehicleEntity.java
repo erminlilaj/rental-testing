@@ -40,6 +40,8 @@ public class VehicleEntity {
     private LocalDateTime updatedAt;
     private LocalDateTime deletedAt;
 
+    private String imagePath;//path to store the uploaded image
+
 
 
     @PrePersist
