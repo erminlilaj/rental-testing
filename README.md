@@ -4,205 +4,160 @@ VALUES ('admin', 'admin', 'admin', 'admin@mail.com', '$2a$10$3tSIPUuEo8lmzjBnfRZ
 
 # API Documentation
 
-## Authentication
-The API uses **Bearer Token (JWT)** authentication for secure access. All endpoints require authentication by default unless specified otherwise.
+# OpenAPI Specification Documentation
+
+## Introduction
+This document provides a comprehensive overview of the API specification for `ms-spring-rental`. It includes details on available endpoints, their functionality, and the data structures involved. Additionally, we will discuss the logic behind some of the key controllers and services used in the application.
+
+
+### Security
+- **Bearer Authentication**: Uses JWT tokens for secure API calls.
+
+---
 
 ## Endpoints
 
-### Authentication Endpoints
-1. **User Registration**  
-   - **Endpoint**: `/auth/signup`  
-   - **Method**: `POST`  
-   - **Request Body**:  
-     ```json
-     {
-       "username": "string",
-       "name": "string",
-       "surname": "string",
-       "email": "string",
-       "password": "string",
-       "age": "integer"
-     }
-     ```
+### Vehicle Controller
+1. **`GET /api/vehicles/{id}`**
+   - Fetches details of a specific vehicle by its ID.
+   - **Responses**: Returns `VehicleResponse`.
 
-2. **User Login**  
-   - **Endpoint**: `/auth/login`  
-   - **Method**: `POST`  
-   - **Request Body**:  
-     ```json
-     {
-       "username": "string",
-       "password": "string"
-     }
-     ```
+2. **`PUT /api/vehicles/{id}`**
+   - Updates the details of a specific vehicle.
+   - **Request Body**: `UpdateVehicleRequest`.
+   - **Responses**: Returns `VehicleEntity`.
 
-### Vehicle Endpoints
-1. **Get All Vehicles**  
-   - **Endpoint**: `/api/vehicles`  
-   - **Method**: `GET`  
-   - **Response**: Array of `VehicleEntity`
+3. **`DELETE /api/vehicles/{id}`**
+   - Deletes a specific vehicle by its ID.
+   - **Responses**: HTTP 200 on success.
 
-2. **Create Vehicle**  
-   - **Endpoint**: `/api/vehicles`  
-   - **Method**: `POST`  
-   - **Request Body**:  
-     ```json
-     {
-       "brand": "string",
-       "model": "string",
-       "year": "integer",
-       "gearboxType": "AUTOMATIC | MANUAL",
-       "fuelType": "DIESEL | PETROL | ELECTRIC",
-       "color": "string",
-       "vehicleStatus": "AVAILABLE | MAINTENANCE",
-       "dailyFee": "number"
-     }
-     ```
+4. **`GET /api/vehicles`**
+   - Fetches all vehicles.
+   - **Responses**: Array of `VehicleEntity`.
 
-3. **Get Vehicle by ID**  
-   - **Endpoint**: `/api/vehicles/{id}`  
-   - **Method**: `GET`  
-   - **Response**: `VehicleResponse`
+5. **`POST /api/vehicles`**
+   - Creates a new vehicle with optional image upload.
+   - **Request Body**: `multipart/form-data` containing `CreateVehicleRequest` and an image file.
 
-4. **Update Vehicle**  
-   - **Endpoint**: `/api/vehicles/{id}`  
-   - **Method**: `PUT`  
-   - **Request Body**:  
-     ```json
-     {
-       "model": "string",
-       "color": "string",
-       "dailyFee": "number",
-       "vehicleStatus": "AVAILABLE | MAINTENANCE"
-     }
-     ```
+### User Controller
+1. **`GET /api/users/{id}`**
+   - Fetches user details by ID.
+   - **Responses**: Returns `UserEntity`.
 
-5. **Delete Vehicle**  
-   - **Endpoint**: `/api/vehicles/{id}`  
-   - **Method**: `DELETE`
+2. **`PUT /api/users/{id}`**
+   - Updates user information.
+   - **Request Body**: `UpdateUserRequest`.
+   - **Responses**: Returns `UserEntity`.
 
-### User Endpoints
-1. **Get All Users**  
-   - **Endpoint**: `/api/users`  
-   - **Method**: `GET`  
-   - **Response**: Array of `UserEntity`
+3. **`DELETE /api/users/{id}`**
+   - Deletes a user by ID.
+   - **Responses**: HTTP 200 on success.
 
-2. **Create User**  
-   - **Endpoint**: `/api/users`  
-   - **Method**: `POST`  
-   - **Request Body**:  
-     ```json
-     {
-       "username": "string",
-       "name": "string",
-       "surname": "string",
-       "email": "string",
-       "password": "string",
-       "age": "integer",
-       "userType": "ADMIN | USER"
-     }
-     ```
+4. **`GET /api/users`**
+   - Fetches all users.
+   - **Responses**: Array of `UserEntity`.
 
-3. **Get User by ID**  
-   - **Endpoint**: `/api/users/{id}`  
-   - **Method**: `GET`  
-   - **Response**: `UserEntity`
+5. **`POST /api/users`**
+   - Creates a new user.
+   - **Request Body**: `CreateUserRequest`.
+   - **Responses**: Returns `UserEntity`.
 
-4. **Update User**  
-   - **Endpoint**: `/api/users/{id}`  
-   - **Method**: `PUT`  
-   - **Request Body**:  
-     ```json
-     {
-       "username": "string",
-       "password": "string",
-       "age": "integer"
-     }
-     ```
+### Authentication Controller
+1. **`POST /auth/signup`**
+   - Registers a new user.
+   - **Request Body**: `RegisterUserRequest`.
+   - **Responses**: Empty object.
 
-5. **Delete User**  
-   - **Endpoint**: `/api/users/{id}`  
-   - **Method**: `DELETE`
+2. **`POST /auth/login`**
+   - Authenticates a user and provides a JWT token.
+   - **Request Body**: `LoginUserRequest`.
+   - **Responses**: JWT token.
 
-### Reservation Endpoints
-1. **Create Reservation**  
-   - **Endpoint**: `/api/reservations/create`  
-   - **Method**: `POST`  
-   - **Request Body**:  
-     ```json
-     {
-       "vehicleId": "integer",
-       "startDate": "date-time",
-       "endDate": "date-time"
-     }
-     ```
+3. **`GET /auth/userId`**
+   - Fetches the logged-in user ID.
 
-2. **Check Reservation Availability**  
-   - **Endpoint**: `/api/reservations/check-availability`  
-   - **Method**: `POST`  
-   - **Request Body**:  
-     ```json
-     {
-       "vehicleId": "integer",
-       "startDate": "date-time",
-       "endDate": "date-time"
-     }
-     ```  
-   - **Response**: `Boolean`
+4. **`GET /auth/isAdmin`**
+   - Checks if the logged-in user has admin privileges.
 
-3. **Get All Reservations**  
-   - **Endpoint**: `/api/reservations`  
-   - **Method**: `GET`  
-   - **Response**: Array of `ReservationResponse`
+### Reservation Controller
+1. **`POST /api/reservations/create`**
+   - Creates a new reservation.
+   - **Request Body**: `CreateReservationRequest`.
+   - **Responses**: `ReservationResponse`.
 
-4. **Get Reservation by ID**  
-   - **Endpoint**: `/api/reservations/{id}`  
-   - **Method**: `GET`  
-   - **Response**: `ReservationResponse`
+2. **`POST /api/reservations/check-availability`**
+   - Checks the availability of a reservation.
+   - **Request Body**: `CreateReservationRequest`.
+   - **Responses**: Boolean.
 
-5. **Get Reservation Statistics**  
-   - **Endpoint**: `/api/reservations/statistics/{MM-yyyy}`  
-   - **Method**: `GET`  
-   - **Response**: Array of `ReservationStatisticsResponse`
+3. **`GET /api/reservations`**
+   - Fetches all reservations.
+   - **Responses**: Array of `ReservationResponse`.
 
-6. **Cancel Reservation**  
-   - **Endpoint**: `/api/reservations/cancel/{id}`  
-   - **Method**: `DELETE`  
-   - **Response**: `ReservationResponse`
+4. **`DELETE /api/reservations/cancel/{id}`**
+   - Cancels a reservation by ID.
+   - **Responses**: `ReservationResponse`.
+
+### Statistics
+1. **`GET /api/reservations/statistics/{MM-yyyy}`**
+   - Fetches reservation statistics for a given month and year.
+   - **Responses**: Array of `ReservationStatisticsResponse`.
+
+---
 
 ## Data Models
 
-### Vehicle
-- `id`: integer  
-- `brand`: string  
-- `model`: string  
-- `year`: integer  
-- `gearboxType`: AUTOMATIC | MANUAL  
-- `fuelType`: DIESEL | PETROL | ELECTRIC  
-- `color`: string  
-- `vehicleStatus`: AVAILABLE | MAINTENANCE  
-- `dailyFee`: number  
-- `createdAt`, `updatedAt`, `deletedAt`: date-time  
+### Vehicle Models
+- **`UpdateVehicleRequest`**
+  - Fields: `model`, `color`, `dailyFee`, `vehicleStatus`.
 
-### User
-- `id`: integer  
-- `username`: string  
-- `name`, `surname`: string  
-- `email`: string  
-- `age`: integer  
-- `userType`: ADMIN | USER  
-- Additional security properties like `accountNonExpired`, `enabled`, etc.
+- **`VehicleEntity`**
+  - Fields: `id`, `brand`, `model`, `year`, `gearboxType`, `fuelType`, `color`, `vehicleStatus`, `dailyFee`, timestamps.
 
-### Reservation
-- `reservationId`: integer  
-- `userId`: integer  
-- `vehicleId`: integer  
-- `vehicleName`: string  
-- `startDate`, `endDate`: date-time  
-- `status`: string  
-- `duration`: integer  
-- `price`: number  
+- **`VehicleResponse`**
+  - Similar to `VehicleEntity` with additional formatting.
 
+### User Models
+- **`RegisterUserRequest`**, **`UpdateUserRequest`**, **`CreateUserRequest`**
+  - Fields include user details like `username`, `password`, `age`, `userType`.
 
-- All endpoints require authentication by default.
+- **`UserEntity`**
+  - Fields: `id`, `username`, `name`, `surname`, `email`, `password`, `age`, `userType`, `authorities`.
+
+### Reservation Models
+- **`CreateReservationRequest`**
+  - Fields: `vehicleId`, `startDate`, `endDate`.
+
+- **`ReservationResponse`**
+  - Fields: `reservationId`, `userId`, `vehicleId`, `startDate`, `endDate`, `status`, `duration`, `price`.
+
+- **`ReservationStatisticsResponse`**
+  - Fields: `month`, `year`, `status`, `count`, `profit`.
+
+---
+
+## Logic and Key Details
+
+### Vehicle Management
+- **Logic**:
+  - **Creation**: Validates the request data, stores vehicle information in the database, and optionally associates an uploaded image.
+  - **Update**: Ensures vehicle exists and updates its details.
+  - **Deletion**: Marks a vehicle as deleted (soft delete) to maintain historical records.
+
+### User Authentication and Authorization
+- **Logic**:
+  - **Signup**: Validates user details, hashes passwords, and assigns default roles.
+  - **Login**: Verifies credentials and generates JWT tokens.
+  - **Role-Based Access**: Differentiates between `ADMIN` and `USER` privileges for accessing endpoints.
+
+### Reservation Workflow
+- **Logic**:
+  - **Create Reservation**: Checks vehicle availability, calculates price, and saves reservation.
+  - **Cancel Reservation**: Updates reservation status and refunds if applicable.
+  - **Statistics**: Aggregates reservation data for reporting purposes.
+
+---
+
+ 
+
 
