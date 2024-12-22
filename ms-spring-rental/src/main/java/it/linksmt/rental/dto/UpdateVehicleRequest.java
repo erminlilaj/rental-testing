@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class UpdateVehicleRequest {
+
     private String model;
     private String color;
     @Min(value = 0, message = "Daily fee cannot be negative")
