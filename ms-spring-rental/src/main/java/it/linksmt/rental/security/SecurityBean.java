@@ -1,6 +1,5 @@
 package it.linksmt.rental.security;
 
-import it.linksmt.rental.enums.UserType;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import lombok.AllArgsConstructor;
