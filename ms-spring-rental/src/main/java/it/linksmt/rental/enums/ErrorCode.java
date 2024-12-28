@@ -15,7 +15,7 @@ public enum ErrorCode {
     VEHICLE_NOT_FOUND(301, "Vehicle not found"),
     VEHICLE_NOT_AVAILABLE(302, "Vehicle is already booked for these dates"),
     RESERVATION_NOT_FOUND(500, "Reservation not found"),
-    RESERVATION_IS_CANCELLED_OR_ONGOING(501, "Reservation is cancelled or ongoing"),
+    RESERVATION_IS_CANCELLED_OR_ONGOING(501, "Reservation is cancelled or maybe ongoing"),
 
     VALIDATION_ERROR(401, "Validation failed"),
     INTERNAL_SERVER_ERROR(501, "Internal server error"),
